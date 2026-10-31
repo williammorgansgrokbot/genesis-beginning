@@ -40,7 +40,8 @@ html,body{margin:0;height:100%;position:fixed;inset:0;overscroll-behavior:none;-
 #card .stars i.off{color:#cbbfa8;text-shadow:none}
 #card .v{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:17px;line-height:1.35;margin:6px 0 2px;color:#2b1a10}
 #card .ref{font-weight:bold;color:#7a4a12;font-size:15px;margin-bottom:10px}
-#card .kjv{font-size:11px;color:#8a7a62;letter-spacing:1px}
+#card .ver{font-size:11px;color:#8a7a62;letter-spacing:1px}
+#card .credit{font-size:9px;line-height:1.25;color:#8a7a62;margin:8px auto 0;max-width:440px}
 #card .row{display:flex;gap:12px;justify-content:center}
 #card .btn{position:static}
 #fade{position:fixed;inset:0;background:#000;opacity:1;z-index:8;pointer-events:auto;transition:opacity .5s ease}
@@ -197,12 +198,15 @@ let fading=true;
 function fadeIn(){FADE.style.opacity='0';setTimeout(()=>{fading=false;FADE.style.pointerEvents='none'},500)}
 function go(S,arg){if(fading&&G.scene)return;fading=true;FADE.style.pointerEvents='auto';FADE.style.opacity='1';hideCard();
  setTimeout(()=>{try{clearUI();G.fx=[];G.keys={};G.ptr.down=false;G.scene=S(arg);G.scene.t=0;G.scene.init&&G.scene.init()}catch(e){window.__showErr&&__showErr(e.message);console.error(e)}fadeIn()},G.scene?500:50)}
-// level-complete card with KJV verse
+// level-complete card with NIrV verse
+const NIRV_NOTICE='Scripture quotations taken from The Holy Bible, New International Reader\'s Version®, NIrV® Copyright © 1995, 1996, 1998, 2014 by Biblica, Inc.® Used by permission. All rights reserved worldwide.';
 function stars(n){let s='';for(let i=0;i<3;i++)s+='<i class="'+(i<n?'':'off')+'" style="animation-delay:'+(.25+i*.18)+'s">★</i>';return s}
 function card(o){const inn=CARD.querySelector('.in');inn.innerHTML=(o.title?'<h2>'+o.title+'</h2>':'')+(o.stars!=null?'<div class="stars">'+stars(o.stars)+'</div>':'')+(o.sub?'<div style="font-weight:bold;font-size:14px;color:#5a4a3a">'+o.sub+'</div>':'')+
- '<div class="v">“'+o.verse+'”</div><div class="ref">'+o.ref+' <span class="kjv">KJV</span></div><div class="row"></div>';
+ '<div class="v">“'+o.verse+'”</div><div class="ref">'+o.ref+' <span class="ver">(NIrV)</span></div><div class="row"></div>'+(o.credit?'<div class="credit">'+o.credit+'</div>':'');
  const row=inn.querySelector('.row');(o.btns||[]).forEach((b,i)=>{const e=btn(b.label,b.cls||'green',{},()=>{if(fading)return;b.fn()});row.appendChild(e)});
- cap('');CARD.classList.add('on');G.paused=true;Snd.play(o.sfx||'win');if(G.auto&&o.btns&&o.btns.length){const b=o.btns[o.btns.length-1];setTimeout(()=>{if(CARD.classList.contains('on'))b.fn()},1500)}}
+ cap('');CARD.classList.add('on');fitCard(inn);G.paused=true;Snd.play(o.sfx||'win');if(G.auto&&o.btns&&o.btns.length){const b=o.btns[o.btns.length-1];setTimeout(()=>{if(CARD.classList.contains('on'))b.fn()},1500)}}
+function fitCard(inn){const v=inn.querySelector('.v');if(!v)return;let f=parseFloat(getComputedStyle(v).fontSize);v.style.fontSize='';f=parseFloat(getComputedStyle(v).fontSize);while(inn.scrollHeight>inn.clientHeight+1&&f>10.5){f-=.5;v.style.fontSize=f+'px';v.style.lineHeight='1.28'}}
+addEventListener('resize',()=>{if(CARD.classList.contains('on'))fitCard(CARD.querySelector('.in'))});
 function hideCard(){CARD.classList.remove('on');G.paused=false}
 function levelDone(i,starsN,dl){const L=LEVELS[i];const best=+(store.get(GAME_ID+'S'+i)||0);if(starsN>best)store.set(GAME_ID+'S'+i,starsN);
  const un=+(store.get(GAME_ID+'Unl')||0);if(i+1>un)store.set(GAME_ID+'Unl',i+1);
@@ -390,7 +394,7 @@ function RestScene(){const S={name:'finale',n:0,N:6,rest:0,
  tap(x,y){if(this.done)return;this.n++;Snd.play('chime');burst(x,y,12);floatTxt(['Good!','Very good!','♥','Beautiful!','Good!','Very good!'][this.n-1],x,y-12);this.upd();cap('');
   if(this.n>=this.N){this.done=.01;fullBurst();cap('And God saw every thing that he had made: it was very good.');
    setTimeout(()=>{if(G.scene===this)cap('On the seventh day, God rested. 🌙')},2600);
-   setTimeout(()=>{if(G.scene===this)card({title:'It was very good! 🌍',sub:'You finished Genesis: In the Beginning!',verse:'And God saw every thing that he had made, and, behold, it was very good. And the evening and the morning were the sixth day.',ref:'Genesis 1:31',btns:[{label:'🏠 Home',cls:'cream',fn:()=>go(TitleScene)},{label:'↻ Play Again',cls:'green',fn:()=>go(LEVELS[0].intro)}],sfx:'fanfare'})},7000)}},
+   setTimeout(()=>{if(G.scene===this)card({title:'It was very good! 🌍',sub:'You finished Genesis: In the Beginning!',verse:'God saw everything he had made. And it was very good. There was evening, and there was morning. It was day six.',ref:'Genesis 1:31',btns:[{label:'🏠 Home',cls:'cream',fn:()=>go(TitleScene)},{label:'↻ Play Again',cls:'green',fn:()=>go(LEVELS[0].intro)}],credit:NIRV_NOTICE,sfx:'fanfare'})},7000)}},
  update(dt){if(this.done){this.done+=dt;this.rest=clamp((this.done-2.4)/1.6,0,1)}if(this.done&&this.done<2.6)celebrate(dt)},
  auto(dt){this.ac=(this.ac||0)+dt;if(this.ac<.5)return;this.ac=0;if(!this.done)this.tap(rnd(G.W*.2,G.W*.8),rnd(70,150))},
  draw(){bgAt('bg_garden');drawBirds(this.t);drawAnimals(this.t);X.save();X.globalCompositeOperation='lighter';glowDot(G.W*.76,G.H*.38,90,'rgba(255,170,110,.25)');X.restore();
@@ -399,18 +403,18 @@ function RestScene(){const S={name:'finale',n:0,N:6,rest:0,
 // ---------- STORY ----------
 const pg=(text,drawFn)=>({text,draw:drawFn});
 const LEVELS=[
- {name:'Let There Be Light',scene:LightScene,ref:'Genesis 1:3',done:'There was light!',verse:'And God said, Let there be light: and there was light.',
+ {name:'Let There Be Light',scene:LightScene,ref:'Genesis 1:3',done:'There was light!',verse:'God said, “Let there be light.” And there was light.',
   intro:()=>Story([pg('In the beginning, everything was dark and empty, with deep water everywhere.',t=>{bgAt('bg_void');D.vig(.35)}),
    pg('Then God said: “Let there be light!” Tap the dark to fill it with light.',t=>{bgAt('bg_void');const r=40+Math.sin(t*2)*3;X.save();X.beginPath();X.arc(G.W/2,70,r,0,7);X.clip();bgAt('bg_sea');X.restore();glowDot(G.W/2,70,60,'rgba(255,245,200,.6)');D.vig(.35)})],LightScene)},
- {name:'Sea and Sky',scene:SeaScene,ref:'Genesis 1:9',done:'Dry land appeared!',verse:'And God said, Let the waters under the heaven be gathered together unto one place, and let the dry land appear: and it was so.',
+ {name:'Sea and Sky',scene:SeaScene,ref:'Genesis 1:9',done:'Dry land appeared!',verse:'God said, “Let the water under the sky be gathered into one place. Let dry ground appear.” And that’s exactly what happened.',
   intro:()=>Story([pg('God made the sky above the waters. Then He gathered the seas so dry land could appear.',t=>{bgAt('bg_sea');const land=.5+.5*clamp((t%6)/2.5,0,1),r=R();X.save();X.beginPath();X.rect(0,r.y+r.h*(1-land*.62)-4,G.W,G.H);X.clip();bgAt('bg_land',Math.min(1,land*1.4),(1-ease(land))*30);X.restore();warm(t);D.vig(.3)})],SeaScene)},
- {name:'Seeds and Trees',scene:SeedScene,ref:'Genesis 1:11',done:'The earth grew green!',verse:'And God said, Let the earth bring forth grass, the herb yielding seed, and the fruit tree yielding fruit after his kind, whose seed is in itself, upon the earth: and it was so.',
+ {name:'Seeds and Trees',scene:SeedScene,ref:'Genesis 1:11',done:'The earth grew green!',verse:'Then God said, “Let the land produce plants. Let them produce their own seeds. And let there be trees on the land that grow fruit with seeds in it. Let each kind of plant or tree have its own kind of seeds.” And that’s exactly what happened.',
   intro:()=>Story([pg('God made grass, plants with seeds, and fruit trees of every kind.',t=>{bgAt('bg_land');drawPlants(t,PLANTS.slice(0,5).map(([n,u,v],i)=>({n,u,v,k:clamp(t*.6-i*.25,0,1)})));warm(t);D.vig(.3)})],SeedScene)},
- {name:'Sun, Moon and Stars',scene:SkyScene,ref:'Genesis 1:16',done:'Lights in the sky!',verse:'And God made two great lights; the greater light to rule the day, and the lesser light to rule the night: he made the stars also.',
+ {name:'Sun, Moon and Stars',scene:SkyScene,ref:'Genesis 1:16',done:'Lights in the sky!',verse:'God made two great lights. He made the larger light to rule over the day and the smaller light to rule over the night. He also made the stars.',
   intro:()=>Story([pg('God made the sun to rule the day, the moon to rule the night, and the stars too!',t=>{ensure(5);world(t,4,{night:.8,stars:1});D.vig(.3)})],SkyScene)},
- {name:'Fish and Birds',scene:LifeScene,ref:'Genesis 1:21',done:'Full of life!',verse:'And God created great whales, and every living creature that moveth, which the waters brought forth abundantly, after their kind, and every winged fowl after his kind: and God saw that it was good.',
+ {name:'Fish and Birds',scene:LifeScene,ref:'Genesis 1:21',done:'Full of life!',verse:'So God created the great sea creatures. He created every kind of living thing that fills the seas and moves about in them. He created every kind of bird that flies. And God saw that it was good.',
   intro:()=>Story([pg('God filled the seas with fish and great whales, and the sky with birds.',t=>{ensure(6);world(t,5);D.vig(.3)})],LifeScene)},
- {name:'Animals and Adam',scene:NameScene,ref:'Genesis 2:19',done:'Every creature named!',verse:'And out of the ground the LORD God formed every beast of the field, and every fowl of the air; and brought them unto Adam to see what he would call them: and whatsoever Adam called every living creature, that was the name thereof.',
+ {name:'Animals and Adam',scene:NameScene,ref:'Genesis 2:19',done:'Every creature named!',verse:'The Lord God had formed all the wild animals and all the birds in the sky. He had made all of them out of the ground. He brought them to the man to see what names he would give them. And the name the man gave each living creature became its name.',
   intro:()=>Story([pg('God made all the animals on the land, and He made a man named Adam.',t=>{ensure(7);world(t,6);D.softShadow(G.W*.2,172,14,.35);D.spr('adam',G.W*.2,172,66,{});D.vig(.3)}),
    pg('God brought the animals to Adam to see what he would call them.',t=>{ensure(6);W.animals=[];world(t,6);D.spr('adam2',G.W*.16,172,62,{});['lion','ele','giraffe'].forEach((n,i)=>{const h={lion:34,ele:40,giraffe:62}[n];D.softShadow(G.W*.42+i*G.W*.18,172,h*.4,.3);D.spr(n,G.W*.42+i*G.W*.18,172-Math.abs(Math.sin(t*8+i))*1.5,h,{f:1})});D.vig(.3)})],NameScene)}
 ];
